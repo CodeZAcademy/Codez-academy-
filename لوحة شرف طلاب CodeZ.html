@@ -1,0 +1,1196 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>لوحة شرف CodeZ | للبرمجة والذكاء الاصطناعي</title>
+    <!-- تحميل Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- تحميل خط Cairo العصري -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+    <!-- تحميل أيقونات FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <!-- مكتبة احتفالات (Confetti) -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        cairo: ['Cairo', 'sans-serif'],
+                    },
+                    colors: {
+                        codezDark: '#132439',
+                        codezPanel: '#192e47',
+                        codezCard: '#1e3654',
+                        codezBorder: '#244061',
+                        codezTurquoise: '#44c3c6',
+                        codezOrange: '#f45b06',
+                        goldRank: '#FFD700',
+                        silverRank: '#E2E8F0',
+                        bronzeRank: '#E07A3F',
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            font-family: 'Cairo', sans-serif;
+            background-color: #132439;
+            color: #F8FAFC;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* تمييز صفوف المراكز الثلاثة الأولى في قائمة أول 10 طلاب */
+        .top10-row-1 {
+            background: linear-gradient(90deg, rgba(30, 54, 84, 0.85) 0%, rgba(255, 215, 0, 0.14) 100%);
+            border: 1px solid rgba(255, 215, 0, 0.35);
+        }
+        .top10-row-2 {
+            background: linear-gradient(90deg, rgba(30, 54, 84, 0.85) 0%, rgba(226, 232, 240, 0.10) 100%);
+            border: 1px solid rgba(226, 232, 240, 0.25);
+        }
+        .top10-row-3 {
+            background: linear-gradient(90deg, rgba(30, 54, 84, 0.85) 0%, rgba(244, 91, 6, 0.14) 100%);
+            border: 1px solid rgba(244, 91, 6, 0.35);
+        }
+        .top10-row-default {
+            background-color: rgba(30, 54, 84, 0.65);
+            border: 1px solid #244061;
+        }
+
+        /* شريط التقدم متدرج من التركوازي إلى البرتقالي */
+        .progress-gradient {
+            background: linear-gradient(90deg, #44c3c6 0%, #38bdf8 55%, #f45b06 100%);
+        }
+        .progress-silver {
+            background: linear-gradient(90deg, #94a3b8 0%, #f8fafc 100%);
+        }
+
+        /* شريط التمرير المخصص */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #132439;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #244061;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #44c3c6;
+        }
+
+        input[type=number]::-webkit-inner-spin-button,
+        input[type=number]::-webkit-outer-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+    </style>
+</head>
+<body class="antialiased selection:bg-codezTurquoise selection:text-codezDark flex flex-col justify-between">
+
+    <!-- حاوية الإشعارات العلوية -->
+    <div id="toastContainer" class="fixed top-5 left-1/2 transform -translate-x-1/2 z-50 flex flex-col gap-2 w-11/12 max-w-md pointer-events-none"></div>
+
+    <!-- الشريط العلوي (Header) نظيف تماماً بدون لوجو وبدون زر دخول إدارة ظاهر للطلاب -->
+    <header class="w-full bg-[#132439] border-b border-codezBorder/80 py-5 px-4 sm:px-6">
+        <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-4">
+            <div>
+                <h1 class="text-2xl sm:text-3xl md:text-4xl font-black text-white leading-tight">
+                    لوحة شرف <span dir="ltr" class="inline-block">Code<span class="text-codezOrange">Z</span></span> للبرمجة والذكاء الاصطناعي
+                </h1>
+                <p class="text-sm sm:text-base font-bold text-codezTurquoise mt-1">
+                    ترتيب الأبطال حسب النقاط
+                </p>
+            </div>
+
+            <!-- شارة وضع الإدارة وحالة المزامنة تظهر فقط بعد تسجيل الدخول -->
+            <div class="flex items-center gap-2.5 mr-auto sm:mr-0">
+                <span id="adminBadge" class="hidden px-3.5 py-1.5 rounded-full bg-codezTurquoise/15 text-codezTurquoise border border-codezTurquoise/40 font-extrabold text-xs items-center gap-1.5">
+                    <i class="fa-solid fa-shield-halved"></i> وضع الإدارة نشط
+                </span>
+                <button id="adminHeaderLogoutBtn" onclick="logoutAdmin()" class="hidden px-4 py-2 rounded-full bg-codezOrange/15 hover:bg-codezOrange text-codezOrange hover:text-white border border-codezOrange/40 font-bold text-xs sm:text-sm transition-all duration-200 items-center gap-1.5">
+                    <i class="fa-solid fa-right-from-bracket text-xs"></i>
+                    <span>خروج</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- المحتوى الرئيسي -->
+    <main class="max-w-7xl mx-auto w-full px-3 sm:px-6 py-4 sm:py-6 flex-grow">
+
+        <!-- لوحة تحكم الإدارة (تظهر فقط بعد إدخال كلمة المرور الصحيحة) -->
+        <section id="adminPanel" class="hidden mb-6 bg-codezPanel border-2 border-codezTurquoise/50 rounded-3xl p-4 sm:p-6 shadow-2xl">
+            <div class="flex flex-wrap items-center justify-between gap-3 pb-4 mb-4 border-b border-codezBorder">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-2xl bg-codezTurquoise/20 text-codezTurquoise flex items-center justify-center">
+                        <i class="fa-solid fa-sliders text-lg"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-base sm:text-lg font-extrabold text-white">لوحة تحكم إدارة CodeZ</h2>
+                        <p class="text-xs text-slate-300">
+                            عدّلي النقاط بالأزرار السريعة (+1, +2, +3, +5, +10, -2, -5) أو أضيفي طالباً جديداً، ثم انسخي رابط المزامنة أو صدّري ملف HTML المحدث
+                        </p>
+                    </div>
+                </div>
+
+                <div class="flex flex-wrap items-center gap-2">
+                    <button onclick="openChangePasswordModal()" class="text-xs bg-codezCard hover:bg-slate-700 text-codezTurquoise px-3.5 py-2 rounded-xl border border-codezTurquoise/40 font-bold transition flex items-center gap-1.5">
+                        <i class="fa-solid fa-key"></i>
+                        <span>تغيير كلمة المرور</span>
+                    </button>
+                    <button onclick="copySyncedShareLink()" class="text-xs bg-codezTurquoise/20 hover:bg-codezTurquoise/35 text-codezTurquoise px-3.5 py-2 rounded-xl border border-codezTurquoise/50 font-extrabold transition flex items-center gap-1.5">
+                        <i class="fa-solid fa-share-nodes"></i>
+                        <span>نسخ رابط التحديث للطلاب</span>
+                    </button>
+                    <button onclick="exportUpdatedHtmlFile()" class="text-xs bg-codezCard hover:bg-slate-700 text-white px-3.5 py-2 rounded-xl border border-codezBorder hover:border-codezTurquoise/50 font-bold transition flex items-center gap-1.5">
+                        <i class="fa-solid fa-file-export"></i>
+                        <span>تحميل HTML محدث</span>
+                    </button>
+                    <button onclick="logoutAdmin()" class="text-xs bg-codezOrange/20 hover:bg-codezOrange/30 text-codezOrange px-3.5 py-2 rounded-xl border border-codezOrange/40 font-bold transition flex items-center gap-1.5">
+                        <i class="fa-solid fa-right-from-bracket"></i>
+                        <span>خروج</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- نموذج إضافة طالب جديد بنقاط مبدئية -->
+            <form id="addStudentForm" onsubmit="addNewStudent(event)" class="grid grid-cols-1 sm:grid-cols-12 gap-3">
+                <div class="sm:col-span-7">
+                    <label for="newStudentName" class="block text-xs font-bold text-slate-300 mb-1">اسم الطالب</label>
+                    <input type="text" id="newStudentName" required placeholder="اكتبي اسم الطالب ثلاثياً..."
+                        class="w-full bg-codezDark border border-codezBorder focus:border-codezTurquoise rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none">
+                </div>
+                <div class="sm:col-span-3">
+                    <label for="newStudentPoints" class="block text-xs font-bold text-slate-300 mb-1">النقاط المبدئية</label>
+                    <input type="number" id="newStudentPoints" value="0" min="0" required
+                        class="w-full bg-codezDark border border-codezBorder focus:border-codezTurquoise rounded-xl px-3.5 py-2.5 text-sm text-white text-center font-extrabold focus:outline-none">
+                </div>
+                <div class="sm:col-span-2 flex items-end">
+                    <button type="submit" class="w-full bg-codezTurquoise hover:bg-teal-300 text-codezDark font-black text-sm py-2.5 px-3 rounded-xl shadow transition flex items-center justify-center gap-1.5">
+                        <i class="fa-solid fa-plus"></i> إضافة طالب
+                    </button>
+                </div>
+            </form>
+        </section>
+
+        <!-- التخطيط المزدوج: عمودان متجاوران على الشاشات الكبيرة (أول 10 طلاب يميناً، وأول 30 طالباً يساراً) -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
+
+            <!-- العمود الأيمن: أول 10 طلاب -->
+            <section class="lg:col-span-6 bg-codezPanel/95 border border-codezTurquoise/20 rounded-3xl p-4 sm:p-6 shadow-2xl">
+                <div class="flex items-center justify-between mb-5">
+                    <div class="w-12"></div>
+                    <h2 class="text-xl sm:text-2xl font-black text-white text-center tracking-wide">
+                        أول 10 طلاب
+                    </h2>
+                    <span class="text-[11px] font-bold text-codezTurquoise bg-codezTurquoise/10 border border-codezTurquoise/30 px-2.5 py-1 rounded-full">
+                        TOP 10
+                    </span>
+                </div>
+
+                <!-- قائمة المراكز من 1 إلى 10 -->
+                <div id="top10List" class="flex flex-col gap-2.5">
+                    <!-- يتم توليد الصفوف ديناميكياً -->
+                </div>
+            </section>
+
+            <!-- العمود الأيسر: أول 30 طالباً + شريط البحث الفوري بين جميع الطلاب -->
+            <section class="lg:col-span-6 bg-codezPanel/95 border border-codezTurquoise/20 rounded-3xl p-4 sm:p-6 shadow-2xl flex flex-col">
+                <div class="flex flex-col sm:flex-row items-center justify-between gap-3 mb-4">
+                    <h2 id="leftCardTitle" class="text-xl sm:text-2xl font-black text-white text-center sm:text-right">
+                        أول 30 طالباً
+                    </h2>
+
+                    <!-- شريط بحث فوري لمعرفة ترتيب أي طالب بين جميع الطلاب الـ 54 -->
+                    <div class="relative w-full sm:w-60">
+                        <i class="fa-solid fa-magnifying-glass absolute right-3 top-1/2 transform -translate-y-1/2 text-codezTurquoise text-xs"></i>
+                        <input type="text" id="searchInput" oninput="renderLeaderboard()" placeholder="ابحث باسمك لمعرفة ترتيبك..."
+                            class="w-full bg-codezDark border border-codezBorder focus:border-codezTurquoise rounded-full pr-8 pl-7 py-1.5 text-xs text-white placeholder-slate-400 focus:outline-none transition">
+                        <button id="clearSearchBtn" onclick="clearSearch()" aria-label="مسح البحث" class="hidden absolute left-2.5 top-1/2 transform -translate-y-1/2 text-slate-400 hover:text-white text-xs">
+                            <i class="fa-solid fa-circle-xmark"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- قائمة المراكز من 11 إلى 30 (أو نتائج البحث الشاملة / بقية الطلاب للإدارة) -->
+                <div id="top30List" class="flex flex-col divide-y divide-codezBorder/60">
+                    <!-- يتم توليد الصفوف ديناميكياً -->
+                </div>
+
+                <!-- رسالة عند عدم وجود نتائج بحث -->
+                <div id="emptySearchState" class="hidden py-10 text-center">
+                    <i class="fa-solid fa-user-magnifying-glass text-codezTurquoise text-2xl mb-2"></i>
+                    <p class="text-sm font-bold text-slate-300">لا يوجد طالب مطابق لبحثك</p>
+                </div>
+            </section>
+
+        </div>
+
+        <!-- شريط توضيحي سفلي لمؤشرات الحركة -->
+        <div class="mt-4 px-2 flex flex-wrap items-center justify-between gap-2 text-xs text-slate-400">
+            <div class="flex items-center gap-4">
+                <span class="flex items-center gap-1.5"><span class="text-emerald-400 text-[10px]">▲</span> صعود في الترتيب</span>
+                <span class="flex items-center gap-1.5"><span class="text-codezOrange text-[10px]">▼</span> تراجع في الترتيب</span>
+                <span class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-codezTurquoise inline-block"></span> مركز ثابت</span>
+            </div>
+            <div class="text-slate-400">
+                يمكن لأي طالب البحث باسمه لمعرفة مركزه ونقاطه فوراً
+            </div>
+        </div>
+
+    </main>
+
+    <!-- التذييل مع حرف Z خفي وهادئ في أقصى اليمين لفتح نافذة الإدارة بدون لفت انتباه الطلاب -->
+    <footer class="w-full border-t border-codezTurquoise/15 bg-codezPanel/80 py-3.5 px-4 sm:px-6 mt-6">
+        <div class="max-w-7xl mx-auto flex items-center justify-between gap-2 text-xs text-slate-400">
+            <div class="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3">
+                <p>© <span id="currentYear"></span> <strong class="text-white" dir="ltr">Code<span class="text-codezOrange">Z</span></strong> للبرمجة والذكاء الاصطناعي — لوحة شرف الطلاب</p>
+                <span class="text-[11px] text-slate-500">تُحدّث النقاط دورياً بواسطة إدارة الأكاديمية</span>
+            </div>
+
+            <!-- رمز حرف Z هادئ في أسفل اليمين يفتح نافذة كلمة مرور الإدارة -->
+            <button type="button" id="secretZTrigger" onclick="openAdminLoginModal()" aria-label="Z"
+                class="w-7 h-7 rounded-lg flex items-center justify-center text-codezTurquoise/45 hover:text-codezTurquoise hover:bg-codezDark/60 border border-transparent hover:border-codezTurquoise/25 transition-all duration-200 select-none shrink-0">
+                <span dir="ltr" class="font-black text-sm leading-none tracking-tighter">Z</span>
+            </button>
+        </div>
+    </footer>
+
+    <!-- نافذة دخول الإدارة (بدون أي تلميحات أو كلمة مرور ظاهرة للطلاب) -->
+    <div id="loginModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden items-center justify-center p-4">
+        <div class="bg-codezPanel border border-codezTurquoise/40 rounded-3xl max-w-sm w-full p-6 shadow-2xl">
+            <div class="flex items-center justify-between mb-5">
+                <div class="flex items-center gap-2.5">
+                    <div class="w-10 h-10 rounded-2xl bg-codezTurquoise/15 text-codezTurquoise flex items-center justify-center border border-codezTurquoise/30">
+                        <i class="fa-solid fa-shield-halved text-lg"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-base font-extrabold text-white">دخول الإدارة</h3>
+                        <p class="text-[11px] text-slate-400">مخصص لمسؤولة الأكاديمية</p>
+                    </div>
+                </div>
+                <button type="button" onclick="closeModal('loginModal')" class="text-slate-400 hover:text-white p-1">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+
+            <form onsubmit="verifyAdminLogin(event)">
+                <div class="mb-5">
+                    <label for="adminPasswordInput" class="block text-xs font-bold text-slate-200 mb-2">أدخلي كلمة المرور:</label>
+                    <input type="password" id="adminPasswordInput" required autocomplete="current-password"
+                        class="w-full bg-codezDark border border-slate-600 focus:border-codezTurquoise rounded-xl px-4 py-3 text-center text-base tracking-widest text-white focus:outline-none">
+                </div>
+                <button type="submit" class="w-full bg-codezTurquoise hover:bg-teal-300 text-codezDark font-black py-2.5 rounded-xl transition shadow-lg">
+                    تأكيد الدخول
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- نافذة تغيير كلمة المرور ومزامنة الإصدار -->
+    <div id="changePasswordModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden items-center justify-center p-4">
+        <div class="bg-codezPanel border border-codezTurquoise/40 rounded-3xl max-w-sm w-full p-6 shadow-2xl">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-base font-extrabold text-white flex items-center gap-2">
+                    <i class="fa-solid fa-key text-codezTurquoise"></i> تغيير كلمة مرور الإدارة
+                </h3>
+                <button type="button" onclick="closeModal('changePasswordModal')" class="text-slate-400 hover:text-white p-1">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+            <form onsubmit="saveNewAdminPassword(event)">
+                <div class="mb-4">
+                    <label for="newAdminPasswordInput" class="block text-xs font-bold text-slate-300 mb-1.5">كلمة المرور الجديدة:</label>
+                    <input type="password" id="newAdminPasswordInput" required minlength="4"
+                        class="w-full bg-codezDark border border-slate-600 focus:border-codezTurquoise rounded-xl px-4 py-2.5 text-center text-base text-white focus:outline-none">
+                </div>
+                <div class="mb-5">
+                    <label for="confirmAdminPasswordInput" class="block text-xs font-bold text-slate-300 mb-1.5">تأكيد كلمة المرور:</label>
+                    <input type="password" id="confirmAdminPasswordInput" required minlength="4"
+                        class="w-full bg-codezDark border border-slate-600 focus:border-codezTurquoise rounded-xl px-4 py-2.5 text-center text-base text-white focus:outline-none">
+                </div>
+                <button type="submit" class="w-full bg-codezTurquoise hover:bg-teal-300 text-codezDark font-black py-2.5 rounded-xl transition">
+                    حفظ وتحديث لجميع الروابط
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- نافذة تأكيد حذف طالب -->
+    <div id="deleteConfirmModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden items-center justify-center p-4">
+        <div class="bg-codezPanel border border-codezOrange/50 rounded-3xl max-w-sm w-full p-6 shadow-2xl text-center">
+            <div class="w-12 h-12 rounded-full bg-codezOrange/15 text-codezOrange flex items-center justify-center mx-auto mb-3 text-xl">
+                <i class="fa-solid fa-trash-can"></i>
+            </div>
+            <h3 class="text-base font-extrabold text-white mb-1">حذف الطالب؟</h3>
+            <p class="text-xs text-slate-300 mb-5">هل أنتِ متأكدة من حذف <strong id="deleteTargetName" class="text-codezOrange"></strong> من القائمة؟</p>
+            <div class="flex items-center gap-3">
+                <button type="button" onclick="closeModal('deleteConfirmModal')" class="flex-1 bg-codezDark hover:bg-slate-800 text-slate-200 font-bold py-2.5 rounded-xl text-xs transition border border-slate-700">
+                    إلغاء
+                </button>
+                <button type="button" id="confirmDeleteBtn" class="flex-1 bg-codezOrange hover:bg-orange-600 text-white font-bold py-2.5 rounded-xl text-xs transition">
+                    تأكيد الحذف
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ==========================================
+        // 1. جميع طلاب أكاديمية CodeZ (54 طالباً مرتبين تنازلياً بالنقاط بدون جروبات)
+        // ==========================================
+        const INITIAL_STUDENTS = [
+            { id: 1, name: "إسلام سعيد عطية", points: 136, prevRank: 1 },
+            { id: 2, name: "أحمد عبد الصمد أحمد", points: 130, prevRank: 2 },
+            { id: 3, name: "أسامة طه أحمد", points: 114, prevRank: 3 },
+            { id: 4, name: "شروق عبد الوهاب", points: 99, prevRank: 4 },
+            { id: 5, name: "عبد الرحمن رجب محمد", points: 98, prevRank: 5 },
+            { id: 6, name: "مختار أحمد مختار", points: 96, prevRank: 6 },
+            { id: 7, name: "مي نبيل تاجي", points: 93, prevRank: 7 },
+            { id: 8, name: "أحمد رجب عبد السلام", points: 91, prevRank: 8 },
+            { id: 9, name: "وفاء أحمد مختار محمد", points: 90, prevRank: 9 },
+            { id: 10, name: "حمزة محمد عبد الله", points: 89, prevRank: 10 },
+            { id: 11, name: "ريم عوف صلاح", points: 86, prevRank: 11 },
+            { id: 12, name: "عبد الله محمد عبد الله", points: 86, prevRank: 12 },
+            { id: 13, name: "عمر أحمد محمد عبد المنعم", points: 82, prevRank: 13 },
+            { id: 14, name: "محمد عصام قيادي", points: 78, prevRank: 14 },
+            { id: 15, name: "هدى محمد عبد الحميد", points: 76, prevRank: 15 },
+            { id: 16, name: "محمد طه معروف", points: 70, prevRank: 16 },
+            { id: 17, name: "محمد عيد جابر", points: 69, prevRank: 17 },
+            { id: 18, name: "آدم شعبان أبو المكارم", points: 66, prevRank: 18 },
+            { id: 19, name: "يوسف عيد جابر", points: 63, prevRank: 19 },
+            { id: 20, name: "ملك فيصل محمود", points: 62, prevRank: 20 },
+            { id: 21, name: "مريد عزوز عبد العظيم", points: 61, prevRank: 21 },
+            { id: 22, name: "كريم فيصل محمود", points: 60, prevRank: 22 },
+            { id: 23, name: "زياد قرني فرحان", points: 59, prevRank: 23 },
+            { id: 24, name: "أحمد قرني نادي", points: 58, prevRank: 24 },
+            { id: 25, name: "محمد رجب حامد", points: 54, prevRank: 25 },
+            { id: 26, name: "محمد عصام عبد العزيز", points: 53, prevRank: 26 },
+            { id: 27, name: "بسملة هاني محمود", points: 51, prevRank: 27 },
+            { id: 28, name: "محمد عمر ممدوح", points: 50, prevRank: 28 },
+            { id: 29, name: "محمد نادي حمدان", points: 48, prevRank: 29 },
+            { id: 30, name: "هناء وجيه مرزوق", points: 45, prevRank: 30 },
+            { id: 31, name: "عبد الرحمن شناوي", points: 44, prevRank: 31 },
+            { id: 32, name: "رغدة رجب عيد السلام", points: 42, prevRank: 32 },
+            { id: 33, name: "لورين نصر نايف", points: 41, prevRank: 33 },
+            { id: 34, name: "محمد أحمد عبد العزيز", points: 39, prevRank: 34 },
+            { id: 35, name: "كريم سعيد قرني", points: 34, prevRank: 35 },
+            { id: 36, name: "روضة محمد فرحان", points: 32, prevRank: 36 },
+            { id: 37, name: "محمد خالد جبر", points: 30, prevRank: 37 },
+            { id: 38, name: "تورسين نصر نايف", points: 29, prevRank: 38 },
+            { id: 39, name: "يوسف رجب عبد السلام", points: 29, prevRank: 39 },
+            { id: 40, name: "عمرو قرني رشاد", points: 28, prevRank: 40 },
+            { id: 41, name: "أحمد نادي حمدان محمد", points: 28, prevRank: 41 },
+            { id: 42, name: "شروق رمضان عبد الله", points: 26, prevRank: 42 },
+            { id: 43, name: "بسمة أحمد سعيد محمود", points: 25, prevRank: 43 },
+            { id: 44, name: "آدم سمير", points: 25, prevRank: 44 },
+            { id: 45, name: "ندى علي عبد الحميد علي", points: 24, prevRank: 45 },
+            { id: 46, name: "زياد محمد درويش", points: 19, prevRank: 46 },
+            { id: 47, name: "معتز أحمد أحمد", points: 15, prevRank: 47 },
+            { id: 48, name: "سما محمود محمد مبروك", points: 14, prevRank: 48 },
+            { id: 49, name: "روضة رمضان عبد الله", points: 11, prevRank: 49 },
+            { id: 50, name: "معاذ أحمد نادي عبد العال", points: 10, prevRank: 50 },
+            { id: 51, name: "جنى محمود محمد مبروك", points: 8, prevRank: 51 },
+            { id: 52, name: "محمد طارق عبد العزيز", points: 5, prevRank: 52 },
+            { id: 53, name: "محمد أحمد عبد العظيم", points: 2, prevRank: 53 },
+            { id: 54, name: "أسماء عبد العظيم حمدان", points: 2, prevRank: 54 }
+        ];
+
+        // إعدادات كلمة المرور والإصدار المدمجة في الملف
+        const EMBEDDED_ADMIN_PASSWORD = "CodeZ.012036";
+        const EMBEDDED_PASSWORD_HASH = "";
+        const EMBEDDED_PASSWORD_VERSION = 1;
+
+        const STORAGE_KEY = 'codez_academy_students_v5';
+        const PASS_HASH_STORAGE_KEY = 'codez_academy_admin_hash_v5';
+        const PASS_VER_STORAGE_KEY = 'codez_academy_admin_ver_v5';
+        const DATA_VER_STORAGE_KEY = 'codez_academy_data_ver_v5';
+
+        let students = [];
+        let isAdmin = false;
+        let activePasswordHash = '';
+        let activePasswordVersion = EMBEDDED_PASSWORD_VERSION;
+        let activeDataVersion = 1;
+        let studentIdToDelete = null;
+
+        // ==========================================
+        // 2. التشفير، الترميز، ومزامنة الرابط والحالة
+        // ==========================================
+        async function hashPassword(plainText) {
+            const normalized = String(plainText ?? "");
+            if (window.crypto && window.crypto.subtle) {
+                const msgBuffer = new TextEncoder().encode(normalized);
+                const hashBuffer = await window.crypto.subtle.digest('SHA-256', msgBuffer);
+                const hashArray = Array.from(new Uint8Array(hashBuffer));
+                return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+            }
+            let hash = 2166136261;
+            for (let i = 0; i < normalized.length; i++) {
+                hash ^= normalized.charCodeAt(i);
+                hash = Math.imul(hash, 16777619);
+            }
+            return "fnv1a_" + (hash >>> 0).toString(16);
+        }
+
+        function encodeStateToBase64Url(payloadObj) {
+            const jsonStr = JSON.stringify(payloadObj);
+            const bytes = new TextEncoder().encode(jsonStr);
+            let binary = '';
+            for (let i = 0; i < bytes.length; i++) {
+                binary += String.fromCharCode(bytes[i]);
+            }
+            return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+        }
+
+        function decodeStateFromBase64Url(encodedStr) {
+            if (!encodedStr) return null;
+            try {
+                let base64 = encodedStr.replace(/-/g, '+').replace(/_/g, '/');
+                while (base64.length % 4) {
+                    base64 += '=';
+                }
+                const binary = atob(base64);
+                const bytes = new Uint8Array(binary.length);
+                for (let i = 0; i < binary.length; i++) {
+                    bytes[i] = binary.charCodeAt(i);
+                }
+                const jsonStr = new TextDecoder().decode(bytes);
+                return JSON.parse(jsonStr);
+            } catch (err) {
+                return null;
+            }
+        }
+
+        function extractStateParamFromUrl() {
+            // قراءة ?state=... من query أو #state=... من hash
+            const searchParams = new URLSearchParams(window.location.search);
+            const fromQuery = searchParams.get('state');
+            if (fromQuery) return fromQuery;
+
+            const hash = window.location.hash || '';
+            const hashMatch = hash.match(/state=([^&]+)/);
+            if (hashMatch && hashMatch[1]) {
+                return decodeURIComponent(hashMatch[1]);
+            }
+            return null;
+        }
+
+        function buildSyncedUrl() {
+            const compactStudents = students.map((s, index) => [
+                s.id ?? (index + 1),
+                s.name,
+                Number(s.points) || 0,
+                Number(s.prevRank) || (index + 1)
+            ]);
+
+            const payload = {
+                pv: activePasswordVersion,
+                ph: activePasswordHash,
+                dv: activeDataVersion,
+                st: compactStudents
+            };
+
+            const encoded = encodeStateToBase64Url(payload);
+            const baseUrl = window.location.href.split('#')[0].split('?')[0];
+            return `${baseUrl}#state=${encoded}`;
+        }
+
+        function syncUrlSilently() {
+            try {
+                const compactStudents = students.map((s, index) => [
+                    s.id ?? (index + 1),
+                    s.name,
+                    Number(s.points) || 0,
+                    Number(s.prevRank) || (index + 1)
+                ]);
+                const payload = {
+                    pv: activePasswordVersion,
+                    ph: activePasswordHash,
+                    dv: activeDataVersion,
+                    st: compactStudents
+                };
+                const encoded = encodeStateToBase64Url(payload);
+                const baseUrl = window.location.href.split('#')[0].split('?')[0];
+                window.history.replaceState(null, '', `${baseUrl}#state=${encoded}`);
+            } catch (err) {
+                // تجاهل خطأ replaceState في حال فتح الملف من سياق محلي مقيد
+            }
+        }
+
+        function normalizeStudentsArray(rawList) {
+            if (!Array.isArray(rawList) || rawList.length === 0) {
+                return INITIAL_STUDENTS.map(s => ({ ...s }));
+            }
+
+            return rawList
+                .map((item, idx) => {
+                    if (Array.isArray(item)) {
+                        return {
+                            id: Number(item[0]) || (idx + 1),
+                            name: String(item[1] || '').trim(),
+                            points: Math.max(0, Number(item[2]) || 0),
+                            prevRank: Number(item[3]) || (idx + 1)
+                        };
+                    }
+                    return {
+                        id: Number(item.id) || (idx + 1),
+                        name: String(item.name || '').trim(),
+                        points: Math.max(0, Number(item.points) || 0),
+                        prevRank: Number(item.prevRank) || (idx + 1)
+                    };
+                })
+                .filter(s => s.name.length > 0);
+        }
+
+        function sortStudents(recordPreviousRanks = true) {
+            if (recordPreviousRanks) {
+                students.forEach((s, idx) => {
+                    s.prevRank = idx + 1;
+                });
+            }
+
+            students.sort((a, b) => {
+                if (b.points !== a.points) {
+                    return b.points - a.points;
+                }
+                return a.name.localeCompare(b.name, 'ar');
+            });
+        }
+
+        function persistState(shouldSyncUrl = true) {
+            sortStudents(true);
+            activeDataVersion += 1;
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(students));
+            localStorage.setItem(DATA_VER_STORAGE_KEY, String(activeDataVersion));
+            localStorage.setItem(PASS_HASH_STORAGE_KEY, activePasswordHash);
+            localStorage.setItem(PASS_VER_STORAGE_KEY, String(activePasswordVersion));
+            if (shouldSyncUrl) {
+                syncUrlSilently();
+            }
+            renderAll();
+        }
+
+        async function loadAndSyncState() {
+            // تحديد الهاش المدمج في الملف إن وجد
+            const embeddedHash = EMBEDDED_PASSWORD_HASH
+                ? EMBEDDED_PASSWORD_HASH
+                : (EMBEDDED_ADMIN_PASSWORD ? await hashPassword(EMBEDDED_ADMIN_PASSWORD) : '');
+
+            const savedHash = localStorage.getItem(PASS_HASH_STORAGE_KEY) || '';
+            const savedPassVer = parseInt(localStorage.getItem(PASS_VER_STORAGE_KEY) || '0', 10);
+            const savedDataVer = parseInt(localStorage.getItem(DATA_VER_STORAGE_KEY) || '0', 10);
+            const savedStudentsRaw = localStorage.getItem(STORAGE_KEY);
+
+            // قراءة أي حالة مرسلة عبر الرابط (#state=... أو ?state=...)
+            const urlParam = extractStateParamFromUrl();
+            const urlState = decodeStateFromBase64Url(urlParam);
+
+            // تحديد أحدث إصدار لكلمة المرور (تُبطل أي كلمة مرور أقدم فوراً)
+            let chosenPassVer = EMBEDDED_PASSWORD_VERSION;
+            let chosenPassHash = embeddedHash;
+
+            if (savedPassVer > chosenPassVer && savedHash) {
+                chosenPassVer = savedPassVer;
+                chosenPassHash = savedHash;
+            } else if (savedPassVer === chosenPassVer && savedHash && savedHash !== embeddedHash) {
+                chosenPassHash = savedHash;
+            }
+
+            if (urlState && typeof urlState.pv === 'number' && urlState.ph) {
+                if (urlState.pv > chosenPassVer) {
+                    chosenPassVer = urlState.pv;
+                    chosenPassHash = urlState.ph;
+                } else if (urlState.pv === chosenPassVer && chosenPassVer > EMBEDDED_PASSWORD_VERSION) {
+                    chosenPassHash = urlState.ph;
+                }
+            }
+
+            activePasswordVersion = chosenPassVer;
+            activePasswordHash = chosenPassHash;
+
+            // تحديد أحدث بيانات للطلاب
+            let chosenStudents = INITIAL_STUDENTS.map(s => ({ ...s }));
+            let chosenDataVer = 1;
+
+            if (savedStudentsRaw) {
+                try {
+                    const parsedSaved = JSON.parse(savedStudentsRaw);
+                    if (Array.isArray(parsedSaved) && parsedSaved.length > 0) {
+                        chosenStudents = normalizeStudentsArray(parsedSaved);
+                        chosenDataVer = Math.max(1, savedDataVer);
+                    }
+                } catch (e) {
+                    // تجاهل الخطأ والاعتماد على البيانات المبدئية
+                }
+            }
+
+            if (urlState && Array.isArray(urlState.st) && urlState.st.length > 0) {
+                const urlDataVer = Number(urlState.dv) || (chosenDataVer + 1);
+                if (urlDataVer >= chosenDataVer || !savedStudentsRaw) {
+                    chosenStudents = normalizeStudentsArray(urlState.st);
+                    chosenDataVer = urlDataVer;
+                }
+            }
+
+            students = chosenStudents;
+            activeDataVersion = chosenDataVer;
+            sortStudents(false);
+
+            // حفظ الحالة المزامنة محلياً
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(students));
+            localStorage.setItem(DATA_VER_STORAGE_KEY, String(activeDataVersion));
+            if (activePasswordHash) {
+                localStorage.setItem(PASS_HASH_STORAGE_KEY, activePasswordHash);
+            }
+            localStorage.setItem(PASS_VER_STORAGE_KEY, String(activePasswordVersion));
+        }
+
+        // ==========================================
+        // 3. بناء وعرض لوحة الشرف
+        // ==========================================
+        function renderAdminChrome() {
+            const adminPanel = document.getElementById('adminPanel');
+            const adminBadge = document.getElementById('adminBadge');
+            const logoutBtn = document.getElementById('adminHeaderLogoutBtn');
+
+            if (isAdmin) {
+                adminPanel.classList.remove('hidden');
+                adminBadge.classList.remove('hidden');
+                adminBadge.classList.add('inline-flex');
+                logoutBtn.classList.remove('hidden');
+                logoutBtn.classList.add('inline-flex');
+            } else {
+                adminPanel.classList.add('hidden');
+                adminBadge.classList.add('hidden');
+                adminBadge.classList.remove('inline-flex');
+                logoutBtn.classList.add('hidden');
+                logoutBtn.classList.remove('inline-flex');
+            }
+        }
+
+        function renderLeaderboard() {
+            const top10Container = document.getElementById('top10List');
+            const top30Container = document.getElementById('top30List');
+            const leftCardTitle = document.getElementById('leftCardTitle');
+            const emptySearchState = document.getElementById('emptySearchState');
+            const searchInput = document.getElementById('searchInput');
+            const clearSearchBtn = document.getElementById('clearSearchBtn');
+
+            const query = searchInput.value.trim().toLowerCase();
+            clearSearchBtn.classList.toggle('hidden', query === '');
+
+            const maxPoints = students.length > 0 ? Math.max(...students.map(s => s.points), 1) : 1;
+
+            const rankedStudents = students.map((s, idx) => ({
+                ...s,
+                realRank: idx + 1
+            }));
+
+            // --- أولاً: قائمة أول 10 طلاب (العمود الأيمن) ---
+            top10Container.innerHTML = '';
+            const top10Slice = rankedStudents.slice(0, 10);
+
+            top10Slice.forEach(student => {
+                const row = document.createElement('div');
+
+                let rowStyleClass = 'top10-row-default';
+                if (student.realRank === 1) rowStyleClass = 'top10-row-1';
+                else if (student.realRank === 2) rowStyleClass = 'top10-row-2';
+                else if (student.realRank === 3) rowStyleClass = 'top10-row-3';
+
+                let medalHTML = '';
+                if (student.realRank === 1) {
+                    medalHTML = `
+                        <svg class="w-8 h-9 shrink-0" viewBox="0 0 36 42" fill="none">
+                            <path d="M12 24L8 40L15 35L18 40V25" fill="#D97706"/>
+                            <path d="M24 24L28 40L21 35L18 40V25" fill="#F59E0B"/>
+                            <circle cx="18" cy="15" r="12" fill="url(#goldGrad)" stroke="#FEF08A" stroke-width="1.5"/>
+                            <text x="18" y="20" text-anchor="middle" fill="#451A03" font-family="Cairo" font-size="14" font-weight="900">1</text>
+                            <defs>
+                                <linearGradient id="goldGrad" x1="6" y1="3" x2="30" y2="27" gradientUnits="userSpaceOnUse">
+                                    <stop stop-color="#FDE047"/>
+                                    <stop offset="1" stop-color="#CA8A04"/>
+                                </linearGradient>
+                            </defs>
+                        </svg>`;
+                } else if (student.realRank === 2) {
+                    medalHTML = `
+                        <svg class="w-8 h-9 shrink-0" viewBox="0 0 36 42" fill="none">
+                            <path d="M12 24L8 40L15 35L18 40V25" fill="#991B1B"/>
+                            <path d="M24 24L28 40L21 35L18 40V25" fill="#DC2626"/>
+                            <circle cx="18" cy="15" r="12" fill="url(#silverGrad)" stroke="#FFFFFF" stroke-width="1.5"/>
+                            <text x="18" y="20" text-anchor="middle" fill="#0F172A" font-family="Cairo" font-size="14" font-weight="900">2</text>
+                            <defs>
+                                <linearGradient id="silverGrad" x1="6" y1="3" x2="30" y2="27" gradientUnits="userSpaceOnUse">
+                                    <stop stop-color="#F8FAFC"/>
+                                    <stop offset="1" stop-color="#94A3B8"/>
+                                </linearGradient>
+                            </defs>
+                        </svg>`;
+                } else if (student.realRank === 3) {
+                    medalHTML = `
+                        <svg class="w-8 h-9 shrink-0" viewBox="0 0 36 42" fill="none">
+                            <path d="M12 24L8 40L15 35L18 40V25" fill="#7C2D12"/>
+                            <path d="M24 24L28 40L21 35L18 40V25" fill="#C2410C"/>
+                            <circle cx="18" cy="15" r="12" fill="url(#bronzeGrad)" stroke="#FDBA74" stroke-width="1.5"/>
+                            <text x="18" y="20" text-anchor="middle" fill="#431407" font-family="Cairo" font-size="14" font-weight="900">3</text>
+                            <defs>
+                                <linearGradient id="bronzeGrad" x1="6" y1="3" x2="30" y2="27" gradientUnits="userSpaceOnUse">
+                                    <stop stop-color="#FDBA74"/>
+                                    <stop offset="1" stop-color="#B45309"/>
+                                </linearGradient>
+                            </defs>
+                        </svg>`;
+                } else {
+                    medalHTML = `
+                        <div class="w-8 h-8 flex items-center justify-center font-black text-base text-white shrink-0">
+                            ${student.realRank}
+                        </div>`;
+                }
+
+                const prev = student.prevRank || student.realRank;
+                let trendHTML = `<span class="w-2 h-2 rounded-full bg-codezTurquoise/60 inline-block" title="ثابت"></span>`;
+                if (student.realRank < prev) {
+                    trendHTML = `<span class="text-emerald-400 text-xs" title="صعد من المركز ${prev}">▲</span>`;
+                } else if (student.realRank > prev) {
+                    trendHTML = `<span class="text-codezOrange text-xs" title="تراجع من المركز ${prev}">▼</span>`;
+                }
+
+                const progressPercent = Math.min(100, Math.max(12, Math.round((student.points / maxPoints) * 100)));
+                const barClass = student.realRank === 2 ? 'progress-silver' : 'progress-gradient';
+
+                row.className = `${rowStyleClass} rounded-2xl px-3 py-2.5 flex ${isAdmin ? 'flex-col sm:flex-row sm:items-center' : 'items-center'} justify-between gap-2 transition-all hover:border-codezTurquoise/50`;
+
+                row.innerHTML = `
+                    <div class="flex items-center gap-2.5 min-w-0 flex-1">
+                        ${medalHTML}
+                        <span class="w-2 h-2 rounded-full bg-codezTurquoise shrink-0 shadow-[0_0_6px_#44c3c6]"></span>
+                        <div class="min-w-0 flex-1">
+                            <div class="font-extrabold text-sm sm:text-base text-white truncate">
+                                ${escapeHtml(student.name)}
+                            </div>
+                        </div>
+                        ${isAdmin ? `<div class="sm:hidden shrink-0">${trendHTML}</div>` : ''}
+                    </div>
+
+                    <div class="flex items-center justify-between sm:justify-end gap-2 shrink-0">
+                        ${isAdmin ? `
+                            <div class="flex flex-wrap items-center gap-1 bg-codezDark px-2 py-1.5 rounded-xl border border-codezTurquoise/50">
+                                <input type="number" value="${student.points}" onchange="setDirectPoints(${student.id}, this.value)" title="تعديل مباشر"
+                                    class="w-11 bg-codezPanel rounded px-1 py-0.5 text-center font-black text-codezTurquoise text-xs border border-codezBorder focus:border-codezTurquoise focus:outline-none">
+                                <button type="button" onclick="changePoints(${student.id}, 1)" class="px-1.5 py-0.5 rounded bg-emerald-500/20 hover:bg-emerald-500/35 text-emerald-300 font-bold text-[11px] transition">+1</button>
+                                <button type="button" onclick="changePoints(${student.id}, 2)" class="px-1.5 py-0.5 rounded bg-emerald-500/20 hover:bg-emerald-500/35 text-emerald-300 font-bold text-[11px] transition">+2</button>
+                                <button type="button" onclick="changePoints(${student.id}, 3)" class="px-1.5 py-0.5 rounded bg-teal-500/20 hover:bg-teal-500/35 text-codezTurquoise font-bold text-[11px] transition">+3</button>
+                                <button type="button" onclick="changePoints(${student.id}, 5)" class="px-1.5 py-0.5 rounded bg-codezTurquoise/20 hover:bg-codezTurquoise/35 text-codezTurquoise font-bold text-[11px] transition">+5</button>
+                                <button type="button" onclick="changePoints(${student.id}, 10)" class="px-1.5 py-0.5 rounded bg-cyan-500/25 hover:bg-cyan-500/40 text-cyan-200 font-extrabold text-[11px] transition">+10</button>
+                                <button type="button" onclick="changePoints(${student.id}, -2)" class="px-1.5 py-0.5 rounded bg-codezOrange/20 hover:bg-codezOrange/35 text-codezOrange font-bold text-[11px] transition">-2</button>
+                                <button type="button" onclick="changePoints(${student.id}, -5)" class="px-1.5 py-0.5 rounded bg-rose-500/20 hover:bg-rose-500/35 text-rose-300 font-bold text-[11px] transition">-5</button>
+                                <button type="button" onclick="promptDeleteStudent(${student.id}, '${escapeJsString(student.name)}')" class="px-1.5 py-0.5 rounded bg-slate-800 hover:bg-rose-600/30 text-slate-400 hover:text-rose-300 text-[11px] transition" title="حذف الطالب">
+                                    <i class="fa-solid fa-trash"></i>
+                                </button>
+                            </div>
+                        ` : `
+                            <span class="font-black text-sm sm:text-base text-codezTurquoise min-w-[34px] text-left">
+                                ${student.points}
+                            </span>
+                            <div class="hidden sm:block w-24 md:w-28 h-2.5 bg-codezDark rounded-full overflow-hidden p-[1px] border border-codezBorder" dir="ltr">
+                                <div class="h-full rounded-full ${barClass}" style="width: ${progressPercent}%"></div>
+                            </div>
+                        `}
+                        <div class="${isAdmin ? 'hidden sm:flex' : 'flex'} w-4 items-center justify-center">
+                            ${trendHTML}
+                        </div>
+                    </div>
+                `;
+                top10Container.appendChild(row);
+            });
+
+            // --- ثانياً: قائمة أول 30 طالباً (المراكز 11 إلى 30، أو نتائج البحث الشاملة للطلاب) ---
+            top30Container.innerHTML = '';
+            let leftListStudents = [];
+
+            if (query !== '') {
+                leftCardTitle.textContent = 'نتائج البحث في الأكاديمية';
+                leftListStudents = rankedStudents.filter(s =>
+                    s.name.toLowerCase().includes(query)
+                );
+            } else {
+                leftCardTitle.textContent = isAdmin
+                    ? 'بقية طلاب الأكاديمية (11 - ' + rankedStudents.length + ')'
+                    : 'أول 30 طالباً';
+                leftListStudents = isAdmin ? rankedStudents.slice(10) : rankedStudents.slice(10, 30);
+            }
+
+            if (leftListStudents.length === 0) {
+                emptySearchState.classList.remove('hidden');
+                return;
+            } else {
+                emptySearchState.classList.add('hidden');
+            }
+
+            leftListStudents.forEach(student => {
+                const row = document.createElement('div');
+                const prev = student.prevRank || student.realRank;
+                let trendHTML = `<span class="w-1.5 h-1.5 rounded-full bg-slate-500 inline-block"></span>`;
+                if (student.realRank < prev) {
+                    trendHTML = `<span class="text-emerald-400 text-[10px]">▲</span>`;
+                } else if (student.realRank > prev) {
+                    trendHTML = `<span class="text-codezOrange text-[10px]">▼</span>`;
+                }
+
+                row.className = `py-2.5 px-2 flex ${isAdmin ? 'flex-col sm:flex-row sm:items-center' : 'items-center'} justify-between gap-2 hover:bg-codezCard/60 rounded-lg transition`;
+
+                row.innerHTML = `
+                    <div class="flex items-center gap-2.5 min-w-0 flex-1">
+                        <span class="w-6 text-center font-extrabold text-xs sm:text-sm text-slate-200 shrink-0">
+                            ${student.realRank}
+                        </span>
+                        <span class="w-2 h-2 rounded-full bg-codezTurquoise shrink-0"></span>
+                        <span class="font-bold text-xs sm:text-sm text-slate-100 truncate">
+                            ${escapeHtml(student.name)}
+                        </span>
+                    </div>
+
+                    <div class="flex items-center justify-end gap-2 shrink-0">
+                        ${isAdmin ? `
+                            <div class="flex flex-wrap items-center gap-1 bg-codezDark px-1.5 py-1 rounded-xl border border-codezTurquoise/40">
+                                <input type="number" value="${student.points}" onchange="setDirectPoints(${student.id}, this.value)" title="تعديل مباشر"
+                                    class="w-10 bg-codezPanel rounded px-1 py-0.5 text-center font-black text-codezTurquoise text-xs border border-codezBorder focus:border-codezTurquoise focus:outline-none">
+                                <button type="button" onclick="changePoints(${student.id}, 1)" class="px-1.5 py-0.5 rounded bg-emerald-500/20 hover:bg-emerald-500/35 text-emerald-300 font-bold text-[10px] transition">+1</button>
+                                <button type="button" onclick="changePoints(${student.id}, 2)" class="px-1.5 py-0.5 rounded bg-emerald-500/20 hover:bg-emerald-500/35 text-emerald-300 font-bold text-[10px] transition">+2</button>
+                                <button type="button" onclick="changePoints(${student.id}, 3)" class="px-1.5 py-0.5 rounded bg-teal-500/20 hover:bg-teal-500/35 text-codezTurquoise font-bold text-[10px] transition">+3</button>
+                                <button type="button" onclick="changePoints(${student.id}, 5)" class="px-1.5 py-0.5 rounded bg-codezTurquoise/20 hover:bg-codezTurquoise/35 text-codezTurquoise font-bold text-[10px] transition">+5</button>
+                                <button type="button" onclick="changePoints(${student.id}, 10)" class="px-1.5 py-0.5 rounded bg-cyan-500/25 hover:bg-cyan-500/40 text-cyan-200 font-extrabold text-[10px] transition">+10</button>
+                                <button type="button" onclick="changePoints(${student.id}, -2)" class="px-1.5 py-0.5 rounded bg-codezOrange/20 hover:bg-codezOrange/35 text-codezOrange font-bold text-[10px] transition">-2</button>
+                                <button type="button" onclick="changePoints(${student.id}, -5)" class="px-1.5 py-0.5 rounded bg-rose-500/20 hover:bg-rose-500/35 text-rose-300 font-bold text-[10px] transition">-5</button>
+                                <button type="button" onclick="promptDeleteStudent(${student.id}, '${escapeJsString(student.name)}')" class="px-1.5 py-0.5 rounded bg-slate-800 hover:bg-rose-600/30 text-slate-400 hover:text-rose-300 text-[10px] transition" title="حذف">
+                                    <i class="fa-solid fa-trash"></i>
+                                </button>
+                            </div>
+                        ` : `
+                            <span class="font-extrabold text-xs sm:text-sm text-codezTurquoise">
+                                ${student.points} <span class="text-[10px] font-normal text-slate-400">نقطة</span>
+                            </span>
+                            ${trendHTML}
+                            <span class="w-1.5 h-1.5 rounded-full bg-codezTurquoise"></span>
+                        `}
+                    </div>
+                `;
+                top30Container.appendChild(row);
+            });
+        }
+
+        function renderAll() {
+            renderAdminChrome();
+            renderLeaderboard();
+        }
+
+        function clearSearch() {
+            document.getElementById('searchInput').value = '';
+            renderLeaderboard();
+        }
+
+        // ==========================================
+        // 4. دخول الإدارة، تغيير الباسورد، والمزامنة
+        // ==========================================
+        function openAdminLoginModal() {
+            if (isAdmin) {
+                document.getElementById('adminPanel').scrollIntoView({ behavior: 'smooth' });
+                return;
+            }
+            document.getElementById('adminPasswordInput').value = '';
+            openModal('loginModal');
+            setTimeout(() => document.getElementById('adminPasswordInput').focus(), 100);
+        }
+
+        async function verifyAdminLogin(e) {
+            e.preventDefault();
+            const entered = document.getElementById('adminPasswordInput').value;
+            const enteredHash = await hashPassword(entered);
+
+            if (!activePasswordHash && EMBEDDED_ADMIN_PASSWORD) {
+                activePasswordHash = await hashPassword(EMBEDDED_ADMIN_PASSWORD);
+            }
+
+            if (activePasswordHash && enteredHash === activePasswordHash) {
+                isAdmin = true;
+                closeModal('loginModal');
+                renderAll();
+                showToast('تم فتح لوحة تحكم إدارة CodeZ بنجاح.', 'success');
+            } else {
+                showToast('كلمة المرور غير صحيحة.', 'error');
+                document.getElementById('adminPasswordInput').value = '';
+            }
+        }
+
+        function logoutAdmin() {
+            isAdmin = false;
+            renderAll();
+            showToast('تم تسجيل الخروج من وضع الإدارة.', 'info');
+        }
+
+        function openChangePasswordModal() {
+            if (!isAdmin) return;
+            document.getElementById('newAdminPasswordInput').value = '';
+            document.getElementById('confirmAdminPasswordInput').value = '';
+            openModal('changePasswordModal');
+            setTimeout(() => document.getElementById('newAdminPasswordInput').focus(), 100);
+        }
+
+        async function saveNewAdminPassword(e) {
+            e.preventDefault();
+            if (!isAdmin) return;
+
+            const newPass = document.getElementById('newAdminPasswordInput').value.trim();
+            const confirmPass = document.getElementById('confirmAdminPasswordInput').value.trim();
+
+            if (newPass !== confirmPass) {
+                showToast('كلمتا المرور غير متطابقتين.', 'error');
+                return;
+            }
+            if (newPass.length < 4) {
+                showToast('يجب أن تكون كلمة المرور 4 أحرف على الأقل.', 'error');
+                return;
+            }
+
+            activePasswordHash = await hashPassword(newPass);
+            activePasswordVersion = Math.max(activePasswordVersion, EMBEDDED_PASSWORD_VERSION) + 1;
+            activeDataVersion += 1;
+
+            localStorage.setItem(PASS_HASH_STORAGE_KEY, activePasswordHash);
+            localStorage.setItem(PASS_VER_STORAGE_KEY, String(activePasswordVersion));
+            localStorage.setItem(DATA_VER_STORAGE_KEY, String(activeDataVersion));
+            syncUrlSilently();
+
+            closeModal('changePasswordModal');
+            showToast('تم تحديث كلمة المرور وإلغاء القديمة! انسخي رابط المزامنة أو حمّلي HTML المحدث.', 'success');
+        }
+
+        function copyToClipboardFallback(text) {
+            if (navigator.clipboard && window.isSecureContext) {
+                return navigator.clipboard.writeText(text).catch(() => execCopyFallback(text));
+            }
+            return Promise.resolve(execCopyFallback(text));
+        }
+
+        function execCopyFallback(text) {
+            const textarea = document.createElement('textarea');
+            textarea.value = text;
+            textarea.style.position = 'fixed';
+            textarea.style.opacity = '0';
+            document.body.appendChild(textarea);
+            textarea.focus();
+            textarea.select();
+            try {
+                document.execCommand('copy');
+            } finally {
+                document.body.removeChild(textarea);
+            }
+        }
+
+        async function copySyncedShareLink() {
+            if (!isAdmin) return;
+            syncUrlSilently();
+            const shareUrl = buildSyncedUrl();
+            await copyToClipboardFallback(shareUrl);
+            showToast('تم نسخ رابط التحديث للطلاب بنجاح.', 'success');
+        }
+
+        async function exportUpdatedHtmlFile() {
+            if (!isAdmin) return;
+
+            try {
+                const docClone = document.documentElement.cloneNode(true);
+                const clonedAdminPanel = docClone.querySelector('#adminPanel');
+                if (clonedAdminPanel) clonedAdminPanel.classList.add('hidden');
+                const clonedAdminBadge = docClone.querySelector('#adminBadge');
+                if (clonedAdminBadge) {
+                    clonedAdminBadge.classList.add('hidden');
+                    clonedAdminBadge.classList.remove('inline-flex');
+                }
+                const clonedLogoutBtn = docClone.querySelector('#adminHeaderLogoutBtn');
+                if (clonedLogoutBtn) {
+                    clonedLogoutBtn.classList.add('hidden');
+                    clonedLogoutBtn.classList.remove('inline-flex');
+                }
+
+                let htmlSource = "<!DOCTYPE html>\n" + docClone.outerHTML;
+
+                const serializedStudents = JSON.stringify(students, null, 12);
+                htmlSource = htmlSource.replace(
+                    /const INITIAL_STUDENTS = \[[\s\S]*?\];/,
+                    `const INITIAL_STUDENTS = ${serializedStudents};`
+                );
+
+                htmlSource = htmlSource.replace(
+                    /const EMBEDDED_ADMIN_PASSWORD = ".*?";/,
+                    `const EMBEDDED_ADMIN_PASSWORD = "";`
+                );
+                htmlSource = htmlSource.replace(
+                    /const EMBEDDED_PASSWORD_HASH = ".*?";/,
+                    `const EMBEDDED_PASSWORD_HASH = ${JSON.stringify(activePasswordHash)};`
+                );
+                htmlSource = htmlSource.replace(
+                    /const EMBEDDED_PASSWORD_VERSION = \d+;/,
+                    `const EMBEDDED_PASSWORD_VERSION = ${Number(activePasswordVersion) || 1};`
+                );
+
+                const blob = new Blob([htmlSource], { type: "text/html;charset=utf-8" });
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement("a");
+                link.href = url;
+                link.download = "foodzilla_leaderboard.html";
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                setTimeout(() => URL.revokeObjectURL(url), 1000);
+
+                showToast('تم تحميل ملف HTML المحدث بالباسورد والنقاط بنجاح.', 'success');
+            } catch (err) {
+                showToast('تعذر تصدير الملف، يرجى المحاولة مرة أخرى.', 'error');
+            }
+        }
+
+        // ==========================================
+        // 5. إدارة الطلاب والنقاط
+        // ==========================================
+        function addNewStudent(e) {
+            e.preventDefault();
+            if (!isAdmin) return;
+
+            const name = document.getElementById('newStudentName').value.trim();
+            const points = parseInt(document.getElementById('newStudentPoints').value, 10) || 0;
+
+            if (!name) return;
+
+            const newId = students.length > 0 ? Math.max(...students.map(s => s.id)) + 1 : 1;
+            students.push({
+                id: newId,
+                name: name,
+                points: Math.max(0, points),
+                prevRank: students.length + 1
+            });
+
+            document.getElementById('newStudentName').value = '';
+            document.getElementById('newStudentPoints').value = '0';
+
+            persistState(true);
+            showToast(`تمت إضافة "${name}" إلى القائمة.`, 'success');
+        }
+
+        function changePoints(id, delta) {
+            if (!isAdmin) return;
+            const student = students.find(s => s.id === id);
+            if (!student) return;
+
+            student.points = Math.max(0, student.points + delta);
+            persistState(true);
+
+            if (delta > 0) {
+                showToast(`+${delta} نقاط لـ ${student.name} (${student.points} نقطة)`, 'success');
+                if (students[0] && students[0].id === id && typeof confetti === 'function') {
+                    confetti({ particleCount: 40, spread: 55, origin: { y: 0.7 } });
+                }
+            } else {
+                showToast(`تم خصم ${Math.abs(delta)} نقاط من ${student.name}`, 'info');
+            }
+        }
+
+        function setDirectPoints(id, val) {
+            if (!isAdmin) return;
+            const student = students.find(s => s.id === id);
+            if (!student) return;
+
+            const parsed = parseInt(val, 10);
+            student.points = isNaN(parsed) ? 0 : Math.max(0, parsed);
+            persistState(true);
+            showToast(`تم تحديث نقاط ${student.name} إلى ${student.points}`, 'success');
+        }
+
+        function promptDeleteStudent(id, name) {
+            if (!isAdmin) return;
+            studentIdToDelete = id;
+            document.getElementById('deleteTargetName').textContent = name;
+            document.getElementById('confirmDeleteBtn').onclick = () => {
+                students = students.filter(s => s.id !== studentIdToDelete);
+                persistState(true);
+                closeModal('deleteConfirmModal');
+                showToast('تم حذف الطالب من القائمة.', 'info');
+            };
+            openModal('deleteConfirmModal');
+        }
+
+        // ==========================================
+        // 6. دوال مساعدة للواجهة
+        // ==========================================
+        function openModal(id) {
+            const m = document.getElementById(id);
+            m.classList.remove('hidden');
+            m.classList.add('flex');
+        }
+
+        function closeModal(id) {
+            const m = document.getElementById(id);
+            m.classList.add('hidden');
+            m.classList.remove('flex');
+        }
+
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+
+            let borderClass = 'border-codezTurquoise text-white';
+            let iconClass = 'fa-circle-info text-codezTurquoise';
+
+            if (type === 'success') {
+                borderClass = 'border-emerald-400 text-emerald-100';
+                iconClass = 'fa-circle-check text-emerald-400';
+            } else if (type === 'error') {
+                borderClass = 'border-codezOrange text-orange-100';
+                iconClass = 'fa-circle-exclamation text-codezOrange';
+            }
+
+            toast.className = `bg-codezPanel ${borderClass} border px-4 py-3 rounded-xl shadow-2xl flex items-center gap-3 text-xs sm:text-sm font-bold transition-all duration-300`;
+            toast.innerHTML = `<i class="fa-solid ${iconClass} text-base"></i><span>${escapeHtml(message)}</span>`;
+
+            container.appendChild(toast);
+            setTimeout(() => {
+                toast.classList.add('opacity-0', '-translate-y-2');
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function escapeJsString(text) {
+            return String(text).replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+        }
+
+        async function initApp() {
+            document.getElementById('currentYear').textContent = new Date().getFullYear();
+            await loadAndSyncState();
+            renderAll();
+        }
+
+        window.addEventListener('DOMContentLoaded', initApp);
+        window.addEventListener('hashchange', async () => {
+            await loadAndSyncState();
+            renderAll();
+        });
+    </script>
+</body>
+</html>
